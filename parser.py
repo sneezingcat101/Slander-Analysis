@@ -2,21 +2,25 @@ from pathlib import Path
 from urllib.parse import urlparse
 import json
 
-def classify(msg):
+def classify(msg_content: str):
     try:
-        result = urlparse(msg)
+        result = urlparse(msg_content)
         if result.scheme and result.netloc:
             return "junk"
     except ValueError:
         pass
+    
+    if len(msg_content) < 5:
+        return "junk"
+    
     return "valid"
 
-def msg_parser(msgs):
+def parse_msgs(msgs):
     with open(msgs, "r", encoding='utf-8') as f:
         msgs_data = json.loads(f.read()).get('messages')
-    authors = {}
+    identifiers = {}
     counter = 0
-    raw_msgs = []
+    parsed_msgs = []
     
     for msg in msgs_data:
         content = msg.get('content').strip().replace("\n", " ").replace("\r", " ")
@@ -30,26 +34,20 @@ def msg_parser(msgs):
             continue
         
         user_id = author.get('id')
-        if user_id not in authors:
-            authors[user_id] = {'id': counter, 'usernames': []}
+        if user_id not in identifiers:
+            identifiers[user_id] = {'id': counter, 'usernames': []}
             counter += 1
             
         username = author.get('name')
         nickname = author.get('nickname')
-        if username not in authors.get(user_id).get('usernames'):
-            authors.get(user_id).get('usernames').append(username)
-        if nickname not in authors.get(user_id).get('usernames'):
-            authors.get(user_id).get('usernames').append(nickname)
+        if username not in identifiers.get(user_id).get('usernames'):
+            identifiers.get(user_id).get('usernames').append(username)
+        if nickname and nickname not in identifiers.get(user_id).get('usernames'):
+            identifiers.get(user_id).get('usernames').append(nickname)
         
-        raw_msgs.append(str(authors[user_id].get('id')) + ": " + content)
+        insert = {'author_id': identifiers[user_id].get('id'), 'content': content, 'timestamp': msg.get('timestamp')}
+        
+        parsed_msgs.append(insert)
     
-    with open('s.txt', 'w', encoding='utf-8') as f:
-        json.dump(authors, f, indent=2)
-        f.write("\n".join(raw_msgs))
-
-script_dir = Path(__file__).parent
-
-data_file = script_dir / 'ab.json'
-
-msg_parser(data_file)
+    return parsed_msgs, identifiers
     
