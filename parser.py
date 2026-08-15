@@ -2,7 +2,9 @@ from pathlib import Path
 from urllib.parse import urlparse
 import json
 
+# filter out useless messages
 def classify(msg_content: str):
+    # filter our messages with just a url (likely gifs)
     try:
         result = urlparse(msg_content)
         if result.scheme and result.netloc:
@@ -15,14 +17,19 @@ def classify(msg_content: str):
     
     return "valid"
 
+# grab only needed parts from the data
+# returns message authors' data and all parsed messages
 def parse_msgs(msgs):
+    # open raw json file
     with open(msgs, "r", encoding='utf-8') as f:
         msgs_data = json.loads(f.read()).get('messages')
+        
     identifiers = {}
     counter = 0
     parsed_msgs = []
     
     for msg in msgs_data:
+        # remove whitespace and junk
         content = msg.get('content').strip().replace("\n", " ").replace("\r", " ")
         if not content:
             continue
@@ -34,10 +41,12 @@ def parse_msgs(msgs):
             continue
         
         user_id = author.get('id')
+        # if theres no instance of the author in 'identifiers' then add one
         if user_id not in identifiers:
             identifiers[user_id] = {'id': counter, 'usernames': []}
             counter += 1
-            
+        
+        # check for associated names of ids
         username = author.get('name')
         nickname = author.get('nickname')
         if username not in identifiers.get(user_id).get('usernames'):
