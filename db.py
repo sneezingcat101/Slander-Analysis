@@ -78,3 +78,8 @@ def get_authors():
     rows = cur.fetchall()
     
     return [dict(row) for row in rows]
+
+def get_unclassified():
+    cur.execute('SELECT DISTINCT chunk_id FROM messages WHERE classified = 0 ORDER BY chunk_id')
+    
+    return cur.fetchall()
