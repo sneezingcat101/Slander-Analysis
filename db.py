@@ -61,7 +61,7 @@ def set_chunk_ids(assignments: list):
     
     cur.executemany('UPDATE messages SET chunk_id = ? WHERE id = ?', rows)
     
-    con.commit
+    con.commit()
 
 # get a full conversation by chunk id
 def get_chunk(chunk_id) -> int:
@@ -79,7 +79,9 @@ def get_authors():
     
     return [dict(row) for row in rows]
 
-def get_unclassified():
+def get_unclassified_chunk_ids():
     cur.execute('SELECT DISTINCT chunk_id FROM messages WHERE classified = 0 ORDER BY chunk_id')
     
-    return cur.fetchall()
+    rows = cur.fetchall()
+    
+    return [row[0] for row in rows]
